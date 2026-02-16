@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 mongoose.connect(
-  "mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/alumnisphere"
+  "mongodb+srv://alumnisphere:alumnisphere@cluster0.bwhgqnh.mongodb.net/?appName=Cluster0"
 )
   .then(() => console.log("MongoDB Atlas Connected"))
   .catch(err => console.log("Mongo Error:", err));
