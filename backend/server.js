@@ -253,26 +253,24 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected");
+  console.log("Socket connected:", socket.id);
 
-  socket.on("sendMessage", async (data) => {
-    const { senderId, receiverId, message } = data;
+  socket.on("sendMessage", (data) => {
+    const messageObject = {
+      senderId: data.senderId,
+      message: data.message,
+      timestamp: new Date()
+    };
 
-    const newMessage = new Message({
-      senderId,
-      receiverId,
-      message
-    });
-
-    await newMessage.save();
-
-    io.emit("receiveMessage", newMessage);
+    io.emit("receiveMessage", messageObject);
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+    console.log("Socket disconnected:", socket.id);
   });
 });
+
+
 
 server.listen(5000, () =>
   console.log("Server running with Socket.io on port 5000")

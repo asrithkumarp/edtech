@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Chat from "../components/Chat";
 
 export default function StudentDashboard() {
   const [mentors, setMentors] = useState([]);
@@ -191,6 +192,8 @@ export default function StudentDashboard() {
           ))}
         </div>
       )}
+      <Chat />
+
     </div>
   );
 }
