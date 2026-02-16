@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Chat from "../components/Chat";
+import ChatLayout from "../components/ChatLayout";
 
 export default function MentorDashboard() {
+  
+const [chatUser, setChatUser] = useState(null);
   const [requests, setRequests] = useState([]);
   const [sessions, setSessions] = useState([]);
 
@@ -138,11 +141,25 @@ export default function MentorDashboard() {
               <p>Date: {session.date}</p>
               <p>Time: {session.time}</p>
               <p>Status: {session.status}</p>
+              {/* ✅ Open Chat Button */}
+    <button
+      onClick={() => setChatUser(session.studentId?._id)}
+      className="bg-indigo-600 text-white px-3 py-1 rounded mt-2"
+    >
+      Open Chat
+    </button>
             </div>
           ))}
         </div>
       )}
-      <Chat />
+      
+{chatUser && (
+  <Chat
+    receiverId={chatUser}
+    onClose={() => setChatUser(null)}
+  />
+)}
+
 
     </div>
   );

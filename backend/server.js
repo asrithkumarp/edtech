@@ -76,9 +76,14 @@ const SessionSchema = new mongoose.Schema({
 const Session = mongoose.model("Session", SessionSchema);
 
 const MessageSchema = new mongoose.Schema({
+  roomId: String,
   senderId: String,
   receiverId: String,
   message: String,
+  seen: {
+    type: Boolean,
+    default: false
+  },
   timestamp: {
     type: Date,
     default: Date.now
@@ -86,6 +91,7 @@ const MessageSchema = new mongoose.Schema({
 });
 
 const Message = mongoose.model("Message", MessageSchema);
+
 
 const JWT_SECRET = "supersecretkey";
 
@@ -249,20 +255,55 @@ app.get("/sessions/:userId", async (req, res) => {
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
 });
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
-  socket.on("sendMessage", (data) => {
-    const messageObject = {
-      senderId: data.senderId,
-      message: data.message,
-      timestamp: new Date()
-    };
+  socket.on("joinRoom", async ({ senderId, receiverId }) => {
+    const roomId =
+      senderId < receiverId
+        ? `${senderId}_${receiverId}`
+        : `${receiverId}_${senderId}`;
 
-    io.emit("receiveMessage", messageObject);
+    socket.join(roomId);
+
+    // Load previous chat history
+    const history = await Message.find({ roomId }).sort({ timestamp: 1 });
+    socket.emit("chatHistory", history);
+  });
+
+  socket.on("sendMessage", async (data) => {
+    const { senderId, receiverId, message } = data;
+
+    const roomId =
+      senderId < receiverId
+        ? `${senderId}_${receiverId}`
+        : `${receiverId}_${senderId}`;
+
+    const newMessage = new Message({
+      roomId,
+      senderId,
+      receiverId,
+      message
+    });
+
+    await newMessage.save();
+
+    io.to(roomId).emit("receiveMessage", newMessage);
+  });
+
+  socket.on("markSeen", async ({ roomId, receiverId }) => {
+    await Message.updateMany(
+      { roomId, receiverId, seen: false },
+      { seen: true }
+    );
+
+    io.to(roomId).emit("messagesSeen");
   });
 
   socket.on("disconnect", () => {
@@ -270,8 +311,6 @@ io.on("connection", (socket) => {
   });
 });
 
-
-
 server.listen(5000, () =>
-  console.log("Server running with Socket.io on port 5000")
+  console.log("Server running with advanced Socket.io chat")
 );

@@ -3,7 +3,9 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Chat from "../components/Chat";
 
+
 export default function StudentDashboard() {
+  const [chatUser, setChatUser] = useState(null);
   const [mentors, setMentors] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [selectedMentor, setSelectedMentor] = useState(null);
@@ -188,11 +190,24 @@ export default function StudentDashboard() {
               <p>Date: {session.date}</p>
               <p>Time: {session.time}</p>
               <p>Status: {session.status}</p>
+              {/* ✅ Open Chat Button */}
+    <button
+      onClick={() => setChatUser(session.studentId?._id)}
+      className="bg-indigo-600 text-white px-3 py-1 rounded mt-2"
+    >
+      Open Chat
+    </button>
             </div>
           ))}
         </div>
       )}
-      <Chat />
+      
+{chatUser && (
+  <Chat
+    receiverId={chatUser}
+    onClose={() => setChatUser(null)}
+  />
+)}
 
     </div>
   );
