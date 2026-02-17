@@ -33,26 +33,36 @@ export default function MentorLeaderboard() {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
 
+      // The API for submitting ratings/reviews is `/mentor/review`.
+      // Previously the code attempted to call `/mentor/${mentorId}/rate` and
+      // update `res.data.newRating`, which doesn't exist; that would cause a
+      // runtime error when the request failed or the response shape was wrong.
+      // We now post to the correct endpoint and use the returned `updatedScore`
+      // object to refresh the mentor's data locally.
       const res = await axios.post(
-        `http://localhost:5000/mentor/${mentorId}/rate`,
-        { rating, studentId: userId },
+        "http://localhost:5000/mentor/review",
+        { mentorId, studentId: userId, rating },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update the mentor's rating in the local state
+      const updated = res.data.updatedScore || {};
+
+      // Update the mentor's data in the local state with the fresh scores.
       setMentors(
         mentors.map((m) =>
           m._id === mentorId
             ? {
                 ...m,
-                rating: res.data.newRating,
-                totalReviews: (m.totalReviews || 0) + 1
+                rating: updated.rating ?? m.rating,
+                totalReviews: updated.totalReviews ?? m.totalReviews,
+                performanceScore: updated.performanceScore ?? m.performanceScore,
+                sessionsCompleted: updated.sessionsCompleted ?? m.sessionsCompleted
               }
             : m
         )
       );
 
-      // Show confirmation
+      // Show confirmation badge briefly.
       setRatingSubmitted({ ...ratingSubmitted, [mentorId]: true });
       setTimeout(() => {
         setRatingSubmitted({ ...ratingSubmitted, [mentorId]: false });
