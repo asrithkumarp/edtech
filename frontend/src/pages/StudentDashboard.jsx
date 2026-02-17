@@ -11,6 +11,7 @@ export default function StudentDashboard() {
   const [selectedMentor, setSelectedMentor] = useState(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
   const studentId = localStorage.getItem("userId");
@@ -20,11 +21,11 @@ export default function StudentDashboard() {
     fetchSessions();
   }, []);
 
-  const fetchMentors = async () => {
+  const fetchMentors = async (term = "") => {
     try {
-      const res = await axios.get(
-        `http://localhost:5000/mentor-profiles/${studentId}`
-      );
+      const url = new URL(`http://localhost:5000/mentor-profiles/${studentId}`);
+      if (term) url.searchParams.append("q", term);
+      const res = await axios.get(url.toString());
       setMentors(res.data);
     } catch (err) {
       console.log("Error fetching mentors");
@@ -116,9 +117,27 @@ export default function StudentDashboard() {
 
       {/* Mentor List */}
       <div className="mb-14">
-        <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-          <span>🌟</span> Browse Mentors
-        </h2>
+        <div className="flex items-center gap-4 mb-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <span>🌟</span> Browse Mentors
+          </h2>
+          <input
+            type="text"
+            placeholder="Search by name or skill"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') fetchMentors(searchTerm);
+            }}
+            className="ml-auto px-4 py-2 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none"
+          />
+          <button
+            onClick={() => fetchMentors(searchTerm)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold"
+          >
+            🔍
+          </button>
+        </div>
 
         {mentors.length === 0 ? (
           <div className="text-center py-12 bg-white/10 rounded-xl border border-white/20">

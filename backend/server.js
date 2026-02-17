@@ -656,9 +656,23 @@ app.delete("/debug/clear-all-users", async (req, res) => {
 /* Smart Matching */
 app.get("/mentor-profiles/:studentId", async (req, res) => {
   const { studentId } = req.params;
+  const search = req.query.q || "";
 
   const student = await User.findById(studentId);
-  const profiles = await MentorProfile.find();
+  
+  // Build query, optionally filtering by name or skills
+  let query = {};
+  if (search) {
+    const regex = new RegExp(search, "i");
+    query = {
+      $or: [
+        { name: regex },
+        { skills: regex }
+      ]
+    };
+  }
+
+  const profiles = await MentorProfile.find(query);
 
   const ranked = profiles.map(profile => {
     const matchScore = profile.skills.filter(skill =>
