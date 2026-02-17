@@ -51,105 +51,126 @@ export default function ChatLayout({ sessions }) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gradient-to-br from-slate-900 to-slate-800">
 
       {/* LEFT SIDEBAR */}
-      <div className="w-1/3 bg-white border-r overflow-y-auto">
-        <div className="p-4 font-bold text-lg border-b">
-          Conversations
+      <div className="w-80 bg-slate-800 border-r border-white/10 overflow-y-auto shadow-xl">
+        <div className="sticky top-0 p-6 font-bold text-xl text-white border-b border-white/10 bg-slate-800/80 backdrop-blur-sm">
+          <span className="text-2xl mr-3">💬</span> Conversations
         </div>
 
-        {sessions.map((session) => {
-          const user =
-            session.studentId?._id === currentUserId
-              ? session.mentorId
-              : session.studentId;
+        {sessions.length === 0 ? (
+          <div className="p-6 text-center text-gray-400">
+            <p>No conversations yet</p>
+          </div>
+        ) : (
+          <div className="space-y-2 p-4">
+            {sessions.map((session) => {
+              const user =
+                session.studentId?._id === currentUserId
+                  ? session.mentorId
+                  : session.studentId;
 
-          return (
-            <div
-              key={session._id}
-              onClick={() => setActiveUser(user)}
-              className={`p-4 cursor-pointer hover:bg-gray-100 ${
-                activeUser?._id === user?._id
-                  ? "bg-gray-200"
-                  : ""
-              }`}
-            >
-              <div className="font-semibold">
-                {user?.name}
-              </div>
-            </div>
-          );
-        })}
+              return (
+                <div
+                  key={session._id}
+                  onClick={() => setActiveUser(user)}
+                  className={`p-4 rounded-lg cursor-pointer transition transform hover:scale-105 ${
+                    activeUser?._id === user?._id
+                      ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg"
+                      : "bg-slate-700/50 text-gray-200 hover:bg-slate-700"
+                  }`}
+                >
+                  <div className="font-semibold flex items-center gap-2">
+                    <span className="text-lg">👤</span>
+                    {user?.name}
+                  </div>
+                  <p className="text-xs opacity-70 mt-1">{session.status || 'Active'}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* RIGHT CHAT AREA */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-800 to-slate-900">
 
         {activeUser ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 bg-white border-b font-semibold">
-              {activeUser.name}
+            <div className="p-6 bg-gradient-to-r from-indigo-600 to-blue-600 border-b border-indigo-400/20 flex justify-between items-center shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg">👤</div>
+                <div>
+                  <div className="font-semibold text-white">{activeUser.name}</div>
+                  <p className="text-indigo-100 text-sm">Online</p>
+                </div>
+              </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-              {messages.map((msg) => {
-                const isMine =
-                  msg.senderId === currentUserId;
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-400 text-center">
+                  <div>
+                    <p className="text-lg">👋 Start the conversation</p>
+                    <p className="text-sm mt-2">Send a message to begin chatting</p>
+                  </div>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isMine = msg.senderId === currentUserId;
 
-                return (
-                  <div
-                    key={msg._id || msg.timestamp}
-                    className={`flex mb-2 ${
-                      isMine
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
+                  return (
                     <div
-                      className={`px-4 py-2 rounded-lg max-w-xs ${
-                        isMine
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-300 text-black"
-                      }`}
+                      key={msg._id || msg.timestamp}
+                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                     >
-                      <div>{msg.message}</div>
-                      <div className="text-xs mt-1 opacity-70 text-right">
-                        {new Date(
-                          msg.timestamp
-                        ).toLocaleTimeString()}
+                      <div
+                        className={`max-w-xs px-4 py-3 rounded-2xl ${
+                          isMine
+                            ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-br-none shadow-md"
+                            : "bg-slate-700 text-gray-100 rounded-bl-none border border-slate-600"
+                        }`}
+                      >
+                        <div className="text-sm">{msg.message}</div>
+                        <div className="text-xs mt-1 opacity-70 text-right">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
 
               <div ref={bottomRef} />
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-white border-t flex gap-2">
+            <div className="p-4 bg-slate-800 border-t border-white/10 flex gap-3">
               <input
-                className="border p-2 flex-1 rounded"
+                className="flex-1 border-2 border-slate-600 bg-slate-700/50 text-white rounded-full px-4 py-3 focus:outline-none focus:border-indigo-500 placeholder-gray-400 text-sm"
                 value={message}
-                onChange={(e) =>
-                  setMessage(e.target.value)
-                }
-                placeholder="Type message..."
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Type a message..."
               />
               <button
                 onClick={sendMessage}
-                className="bg-indigo-600 text-white px-4 py-2 rounded"
+                className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-3 rounded-full font-semibold transition transform hover:scale-105 active:scale-95 text-sm"
               >
-                Send
+                📤 Send
               </button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a conversation
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-center">
+            <div>
+              <p className="text-4xl mb-3">💬</p>
+              <p className="text-lg font-semibold">Select a conversation</p>
+              <p className="text-sm mt-2">Click on a conversation on the left to start chatting</p>
+            </div>
           </div>
         )}
       </div>

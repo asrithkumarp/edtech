@@ -5,6 +5,9 @@ import Signup from "./pages/Signup";
 import MentorDashboard from "./pages/MentorDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+
 
 function App() {
   return (
@@ -33,6 +36,24 @@ function App() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/admin"
+  element={
+    <ProtectedRoute allowedRole="Admin">
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/analytics"
+  element={
+    <ProtectedRoute allowedRole="Admin">
+      <AnalyticsDashboard />
+    </ProtectedRoute>
+  }
+/>
+
 
 
       </Routes>

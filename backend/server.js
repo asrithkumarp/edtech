@@ -248,6 +248,39 @@ app.get("/sessions/:userId", async (req, res) => {
   res.json(sessions);
 });
 
+app.get("/admin/stats", async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalMentors = await User.countDocuments({ role: "Mentor" });
+    const totalStudents = await User.countDocuments({ role: "Student" });
+    const totalSessions = await Session.countDocuments();
+    const totalMessages = await Message.countDocuments();
+    const totalRequests = await Request.countDocuments();
+
+    res.json({
+      totalUsers,
+      totalMentors,
+      totalStudents,
+      totalSessions,
+      totalMessages,
+      totalRequests
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Admin stats failed" });
+  }
+});
+
+app.get("/admin/users", async (req, res) => {
+  const users = await User.find().select("-password");
+  res.json(users);
+});
+
+app.delete("/admin/user/:id", async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ message: "User deleted" });
+});
+
+
 /* ========================
    SOCKET.IO CHAT
 ======================== */
