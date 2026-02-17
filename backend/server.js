@@ -38,6 +38,34 @@ const MentorProfileSchema = new mongoose.Schema({
   experience: String,
   skills: [String],
   bio: String,
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalReviews: {
+    type: Number,
+    default: 0
+  },
+  sessionsCompleted: {
+    type: Number,
+    default: 0
+  },
+  requestsAccepted: {
+    type: Number,
+    default: 0
+  },
+  performanceScore: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 const MentorProfile = mongoose.model("MentorProfile", MentorProfileSchema);
@@ -91,6 +119,32 @@ const MessageSchema = new mongoose.Schema({
 });
 
 const Message = mongoose.model("Message", MessageSchema);
+
+const ReviewSchema = new mongoose.Schema({
+  mentorId: {
+    type: String,
+    required: true
+  },
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5
+  },
+  comment: String,
+  sessionId: String,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const Review = mongoose.model("Review", ReviewSchema);
 
 
 const JWT_SECRET = "supersecretkey";
@@ -250,11 +304,27 @@ app.get("/mentor-profile/:userId", async (req, res) => {
     const userId = req.params.userId;
     console.log("Fetching mentor profile for user ID:", userId);
     
-    const profile = await MentorProfile.findOne({ userId });
+    let profile = await MentorProfile.findOne({ userId });
     
     if (!profile) {
-      console.log("Mentor profile not found, creating empty response");
-      return res.status(404).json({ message: "Mentor profile not found" });
+      // Create default empty mentor profile if it doesn't exist
+      console.log("Mentor profile not found, creating default profile");
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      profile = new MentorProfile({
+        userId,
+        name: user.name || "",
+        company: "",
+        experience: "",
+        skills: [],
+        bio: ""
+      });
+      
+      await profile.save();
+      console.log("Default mentor profile created");
     }
     
     console.log("Mentor profile found");
@@ -282,6 +352,199 @@ app.put("/mentor-profile/:userId", async (req, res) => {
   } catch (err) {
     console.error("Error updating mentor profile:", err.message);
     res.status(500).json({ error: "Failed to update mentor profile", details: err.message });
+  }
+});
+
+/* ========================
+   MENTOR RATING & SCORING
+======================== */
+
+// Function to calculate mentor performance score
+async function calculateMentorScore(mentorId) {
+  try {
+    const profile = await MentorProfile.findOne({ userId: mentorId });
+    if (!profile) return 0;
+
+    // Get metrics
+    const reviews = await Review.find({ mentorId });
+    const sessions = await Session.find({ mentorId }).countDocuments();
+    const requests = await Request.find({ mentorId, status: "Accepted" }).countDocuments();
+    const totalRequests = await Request.find({ mentorId }).countDocuments();
+
+    // Calculate average rating (0-5)
+    let avgRating = 0;
+    if (reviews.length > 0) {
+      avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    }
+
+    // Profile completeness score (0-20)
+    let completenessScore = 0;
+    if (profile.company) completenessScore += 5;
+    if (profile.experience) completenessScore += 5;
+    if (profile.bio) completenessScore += 5;
+    if (profile.skills.length >= 3) completenessScore += 5;
+
+    // Sessions score (0-30) - logarithmic scale
+    const sessionsScore = Math.min(sessions * 3, 30);
+
+    // Skills score (0-15)
+    const skillsScore = Math.min(profile.skills.length * 2, 15);
+
+    // Request acceptance rate (0-20)
+    let acceptanceScore = 0;
+    if (totalRequests > 0) {
+      const acceptanceRate = requests / totalRequests;
+      acceptanceScore = acceptanceRate * 20;
+    }
+
+    // Rating score (0-15)
+    const ratingScore = (avgRating / 5) * 15;
+
+    // Total performance score (0-100)
+    const totalScore = completenessScore + sessionsScore + skillsScore + acceptanceScore + ratingScore;
+
+    // Update profile with new scores
+    profile.rating = Math.round(avgRating * 10) / 10;
+    profile.totalReviews = reviews.length;
+    profile.sessionsCompleted = sessions;
+    profile.requestsAccepted = requests;
+    profile.performanceScore = Math.round(totalScore);
+
+    await profile.save();
+
+    return {
+      performanceScore: Math.round(totalScore),
+      rating: Math.round(avgRating * 10) / 10,
+      totalReviews: reviews.length,
+      sessionsCompleted: sessions,
+      requestsAccepted: requests,
+      breakdownScores: {
+        completeness: completenessScore,
+        sessions: sessionsScore,
+        skills: skillsScore,
+        acceptance: acceptanceScore,
+        rating: ratingScore
+      }
+    };
+  } catch (err) {
+    console.error("Error calculating mentor score:", err.message);
+    return null;
+  }
+}
+
+// Submit review for mentor
+app.post("/mentor/review", async (req, res) => {
+  try {
+    const { mentorId, studentId, rating, comment, sessionId } = req.body;
+
+    if (!mentorId || !studentId || !rating) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
+
+    const review = new Review({
+      mentorId,
+      studentId,
+      rating,
+      comment,
+      sessionId
+    });
+
+    await review.save();
+
+    // Recalculate mentor score
+    const scoreData = await calculateMentorScore(mentorId);
+
+    console.log("Review submitted for mentor:", mentorId);
+    res.json({
+      message: "Review submitted successfully",
+      review,
+      updatedScore: scoreData
+    });
+  } catch (err) {
+    console.error("Error submitting review:", err.message);
+    res.status(500).json({ error: "Failed to submit review", details: err.message });
+  }
+});
+
+// Get mentor leaderboard (top mentors)
+app.get("/mentors/leaderboard", async (req, res) => {
+  try {
+    const mentors = await MentorProfile.find()
+      .sort({ performanceScore: -1 })
+      .limit(10)
+      .lean();
+
+    res.json({
+      leaderboard: mentors.map((m, idx) => ({
+        rank: idx + 1,
+        ...m
+      }))
+    });
+  } catch (err) {
+    console.error("Error fetching leaderboard:", err.message);
+    res.status(500).json({ error: "Failed to fetch leaderboard", details: err.message });
+  }
+});
+
+// Get mentor score and reviews
+app.get("/mentor/reviews/:mentorId", async (req, res) => {
+  try {
+    const { mentorId } = req.params;
+
+    const reviews = await Review.find({ mentorId })
+      .populate("studentId", "name email")
+      .sort({ createdAt: -1 });
+
+    const profile = await MentorProfile.findOne({ userId: mentorId });
+
+    if (!profile) {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
+
+    // Recalculate score to ensure it's current
+    const scoreData = await calculateMentorScore(mentorId);
+
+    res.json({
+      mentorName: profile.name,
+      performanceScore: profile.performanceScore,
+      rating: profile.rating,
+      totalReviews: profile.totalReviews,
+      sessionsCompleted: profile.sessionsCompleted,
+      requestsAccepted: profile.requestsAccepted,
+      reviews
+    });
+  } catch (err) {
+    console.error("Error fetching mentor reviews:", err.message);
+    res.status(500).json({ error: "Failed to fetch reviews", details: err.message });
+  }
+});
+
+// Recalculate all mentor scores (admin tool)
+app.post("/admin/recalculate-scores", async (req, res) => {
+  try {
+    const mentors = await MentorProfile.find();
+    const results = [];
+
+    for (const mentor of mentors) {
+      const scoreData = await calculateMentorScore(mentor.userId);
+      results.push({
+        mentorId: mentor.userId,
+        score: scoreData
+      });
+    }
+
+    console.log("All mentor scores recalculated");
+    res.json({
+      message: "All mentor scores recalculated successfully",
+      results
+    });
+  } catch (err) {
+    console.error("Error recalculating scores:", err.message);
+    res.status(500).json({ error: "Failed to recalculate scores", details: err.message });
   }
 });
 

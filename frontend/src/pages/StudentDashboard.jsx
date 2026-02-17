@@ -94,6 +94,12 @@ export default function StudentDashboard() {
         </div>
         <div className="flex gap-3">
           <button
+            onClick={() => navigate("/mentors/leaderboard")}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
+          >
+            🏆 Leaderboard
+          </button>
+          <button
             onClick={() => navigate("/student/profile")}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
           >

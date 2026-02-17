@@ -285,6 +285,19 @@ export default function StudentProfile() {
           ) : (
             // View Profile
             <div className="space-y-6">
+              {/* Welcome Message for New Students */}
+              {(!user?.studentSkills || user.studentSkills.length === 0) && (
+                <div className="bg-indigo-900/30 border-2 border-indigo-600 rounded-lg p-6 mb-6">
+                  <h3 className="text-xl font-bold text-indigo-400 mb-2">👋 Welcome to Your Student Profile!</h3>
+                  <p className="text-gray-300">Let's get you started! Click the <strong>✏️ Edit</strong> button to add your skills.</p>
+                  <ul className="list-disc list-inside text-gray-300 mt-3 space-y-1">
+                    <li>Add skills you want to learn or improve</li>
+                    <li>These help mentors find the right fit for you</li>
+                    <li>You can update them anytime</li>
+                  </ul>
+                </div>
+              )}
+
               {/* Name */}
               <div className="bg-slate-700 rounded-lg p-4">
                 <p className="text-gray-400 text-sm font-semibold mb-1">📝 Full Name</p>

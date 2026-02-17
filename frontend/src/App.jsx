@@ -6,6 +6,7 @@ import MentorDashboard from "./pages/MentorDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentProfile from "./pages/StudentProfile";
 import MentorProfile from "./pages/MentorProfile";
+import MentorLeaderboard from "./pages/MentorLeaderboard";
 import Debug from "./pages/Debug";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -37,6 +38,15 @@ function App() {
   element={
     <ProtectedRoute allowedRole="Student">
       <StudentProfile />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/mentors/leaderboard"
+  element={
+    <ProtectedRoute allowedRole="Student">
+      <MentorLeaderboard />
     </ProtectedRoute>
   }
 />
