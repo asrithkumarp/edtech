@@ -4,6 +4,9 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import MentorDashboard from "./pages/MentorDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
+import StudentProfile from "./pages/StudentProfile";
+import MentorProfile from "./pages/MentorProfile";
+import Debug from "./pages/Debug";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
@@ -17,6 +20,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/debug" element={<Debug />} />
 
         {/* Protected Student Route */}
         <Route
@@ -29,10 +33,28 @@ function App() {
 />
 
 <Route
+  path="/student/profile"
+  element={
+    <ProtectedRoute allowedRole="Student">
+      <StudentProfile />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
   path="/mentor"
   element={
     <ProtectedRoute allowedRole="Mentor">
       <MentorDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/mentor/profile"
+  element={
+    <ProtectedRoute allowedRole="Mentor">
+      <MentorProfile />
     </ProtectedRoute>
   }
 />

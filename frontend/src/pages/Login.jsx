@@ -21,6 +21,8 @@ localStorage.setItem("userId", res.data.userId);
 
       if (res.data.role === "Mentor") {
         navigate("/mentor");
+      } else if (res.data.role === "Admin") {
+        navigate("/admin");
       } else {
         navigate("/student");
       }

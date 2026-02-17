@@ -80,6 +80,12 @@ const [chatUser, setChatUser] = useState(null);
             </div>
           )}
           <button
+            onClick={() => navigate("/mentor/profile")}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
+          >
+            👤 Profile
+          </button>
+          <button
             onClick={handleLogout}
             className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
           >

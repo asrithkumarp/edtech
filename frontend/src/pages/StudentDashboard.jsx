@@ -92,12 +92,20 @@ export default function StudentDashboard() {
           <h1 className="text-4xl font-bold text-white">👨‍🎓 Student Dashboard</h1>
           <p className="text-gray-400 mt-2">Find and connect with mentors</p>
         </div>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
-        >
-          🚪 Logout
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/student/profile")}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
+          >
+            👤 Profile
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold transition transform hover:scale-105"
+          >
+            🚪 Logout
+          </button>
+        </div>
       </div>
 
       {/* Mentor List */}
